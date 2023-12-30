@@ -3,6 +3,6 @@
 
 void hello_world();
 void help();
-void board_rev();
-
+void reboot();
+void list_files();
 #endif
