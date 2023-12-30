@@ -1,5 +1,7 @@
 This project is far from complete.
 
+Build - `make`
+
 Completed
 - simple shell
 - simple alloc(without free)
