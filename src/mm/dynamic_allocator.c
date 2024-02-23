@@ -9,7 +9,13 @@ page* allocated_pages = NULL;
 // alloc from the buddy system and append to the allocated_pages list
 page* internal_alloc(){
     page* p = (page*) alloc_buddy(1);
-    p->next_allocated_page = NULL;
+    
+    if(p == NULL){
+        d_printf("Failed to alloc mem from buddy system.");
+        return NULL;
+    }
+
+    //initialization
     int slab_count = 0;
     void* used_memory = &(p->memory);
     for(int i=0;i<TYPES;i++){
@@ -24,8 +30,14 @@ page* internal_alloc(){
         }
         p->slabs[slab_count-1].next_free_slab = NULL;
     }
+
+    //insert into the front of the allocated pages
+    p->last_allocated_page = NULL;
+    p->next_allocated_page = allocated_pages;
+    allocated_pages = p;
 }
 
+//check whether a page is okay to free.
 int should_free(page* p){
     for(int i=0;i<TYPES;i++){
         if(p->remain_slots[i] != SLAB_TYPES[i].slot_amount){
@@ -66,17 +78,30 @@ void* kmalloc(size_t size){
     
     slab_type type = round_up(size);
     page* p = allocated_pages;
+    
+    //find an allocated page with an available slab with the target type.
+    int has_free = 0;
     while (1)
     {
         if(p->free_lists[type.index]){
-            slab* return_slab = &(p->free_lists[type.index]);
-            p->free_lists[type.index] = return_slab->next_free_slab;
-            return_slab->next_free_slab = NULL;
-            return return_slab->memory;
+            has_free = 1;
+            break;
         }
     }
-    
-    return NULL;
+
+    if(!has_free){
+        p = internal_alloc();
+        if(p == NULL){
+            d_printf("cannot allocate memory for target size %u", size);
+            return NULL;
+        }
+    }
+
+    //remove slab from free list and return it's corresponding memory.
+    slab* return_slab = &(p->free_lists[type.index]);
+    p->free_lists[type.index] = return_slab->next_free_slab;
+    return_slab->next_free_slab = NULL;
+    return return_slab->memory;
 }
 
 
@@ -116,6 +141,17 @@ void kfree(void* ptr){
     }
 
     if(should_free(p)){
-                
+        if(p->last_allocated_page){
+            page* last_page = p->last_allocated_page;
+            last_page->next_allocated_page = p->next_allocated_page;
+            p->next_allocated_page->last_allocated_page = last_page;
+        }
+        else{
+            allocated_pages = p->next_allocated_page;
+            p->next_allocated_page->last_allocated_page = NULL;
+        }
+        p->next_allocated_page = NULL;
+        p->last_allocated_page = NULL;
+        free_buddy(p);
     }
 }

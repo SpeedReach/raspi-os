@@ -29,11 +29,11 @@ static const slab_type SLAB_TYPES[TYPES] = {
     {.index = 4, .slot_amount = 2, .slot_size = 256}
 };
 
-#define AVAILABLE_BYTES (512 * 5 + 305)
+#define AVAILABLE_BYTES (512 * 5 + 297)
 
 typedef struct {
-    struct page* next_allocated_page;
-    struct page* last_allocated_page;
+    page* next_allocated_page;
+    page* last_allocated_page;
     //make it easier to check if the page is all unallocated.
     uint8_t remain_slots[TYPES];
     slab* free_lists[TYPES];
