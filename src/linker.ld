@@ -1,0 +1,46 @@
+/*
+
+
+
+
+*/
+
+
+KernekStackSize = 200000;
+
+SECTIONS
+{
+  . = 0x80000;
+  .text.boot : { *(.text.boot) }
+
+  .text : {
+    _s_text = .;
+    *(.text)
+    _e_text = .;
+  }
+
+  .rodata : {
+    _s_rodata = .;
+    *(.rodata)
+    _e_rodata = .;
+  }
+
+  .data : {
+    _s_data = .;
+    *(.data)
+    _e_data = .;
+  }  
+
+  . = ALIGN(0x8);
+  .bss : { 
+    _s_bss = .;
+    *(.bss)
+    _e_bss = .;
+  }
+  
+  _e_kernel = .;
+
+  . = . + KernekStackSize;
+  _s_stack = .;
+
+}

@@ -1,0 +1,25 @@
+{
+    "files.associations": {
+        "chrono": "c",
+        "optional": "c",
+        "system_error": "c",
+        "type_traits": "c",
+        "xlocmon": "c",
+        "xtr1common": "c",
+        "strings.h": "c",
+        "utils.h": "c",
+        "array": "c",
+        "vector": "c",
+        "xstring": "c",
+        "xutility": "c",
+        "compare": "c",
+        "format": "c",
+        "memory": "c",
+        "ratio": "c",
+        "tuple": "c",
+        "utility": "c",
+        "xmemory": "c",
+        "assert.h": "c"
+    },
+    "C_Cpp.default.compilerPath": "C:/Program Files (x86)/Arm GNU Toolchain aarch64-none-linux-gnu/13.2 Rel1/bin/aarch64-none-linux-gnu-g++.exe"
+}
