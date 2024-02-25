@@ -2,3 +2,15 @@
 主要參考資料為
  - [交大的oscapstone 2023](https://oscapstone.github.io/)
  - https://github.com/s-matyukevich/raspberry-pi-os
+
+專案尚未完成，目前功能有
+
+mini-uart interface
+dynamic memory allocator
+parse new cpio format for file system
+
+todo:
+shell
+virtual memory
+complete file system
+process scheduler
