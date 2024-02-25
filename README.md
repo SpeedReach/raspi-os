@@ -5,12 +5,12 @@
 
 專案尚未完成，目前功能有
 
-mini-uart interface
-dynamic memory allocator
-parse new cpio format for file system
+- mini-uart interface
+- dynamic memory allocator
+- parse new cpio format for file system
 
 todo:
-shell
-virtual memory
-complete file system
-process scheduler
+- shell
+- virtual memory
+- complete file system
+- process scheduler
