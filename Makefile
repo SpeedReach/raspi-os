@@ -1,6 +1,6 @@
 ARMGNU ?= aarch64-none-linux-gnu
 
-CFLAGS = -Wall -nostdlib -nostartfiles -ffreestanding -Iinclude -mgeneral-regs-only -MP -MD
+CFLAGS = -Wall -nostdlib -nostartfiles -ffreestanding -Iinclude -mgeneral-regs-only -MP -MD -g
 
 
 SRC_DIR = src

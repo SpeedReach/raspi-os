@@ -3,7 +3,7 @@
 #include "mini_uart.h"
 #include "printf.h"
 
-
+char* __initramfs_start;
 
 int 
 is_last_entry(const cpio_newc_entry_t * const entry){
@@ -26,9 +26,13 @@ file_data(const cpio_newc_entry_t * const entry){
 void print_name(cpio_newc_entry_t* entry) { printf("%s\n", PATH_NAME(entry)); }
 
 void list_files(){
-    FOR_FILE(entry, 
-        printf("%s\n", PATH_NAME(entry));
+    FOR_FILE(entry,
+        printf("n: %s\n", PATH_NAME(entry));
     )
+}
+
+void initramfs_callback(const void* data, const uint32_t len){
+    __initramfs_start = (char*) rev_u32(*(uint32_t*) data);
 }
 
 cpio_newc_entry_t* find_file(char* file_name){

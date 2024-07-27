@@ -21,11 +21,11 @@ strcmp(const char *s1, const char *s2)
 	return (*(const unsigned char *)s1 - *(const unsigned char *)(s2 - 1));
 }
 
-void 
+int
 strcpy(char* dest, const char* src, int sourceLen){
     if(sourceLen == 0){
         dest [0] = '\0';
-        return;
+        return 0;
     }
 
     int index = 0;
@@ -42,7 +42,7 @@ strcpy(char* dest, const char* src, int sourceLen){
             break;
         }
     }
-    return;
+    return index + 1;
 }
 
 int 

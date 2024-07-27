@@ -4,9 +4,9 @@
 
 .globl _start
 _start:
-    mrs     x0, mpidr_el1
-	and	x0, x0,#0xFF		// Check processor id
-	cbz	x0, master		// Hang for all non-primary CPU
+    mrs     x1, mpidr_el1
+	and	x1, x1,#0xFF		// Check processor id
+	cbz	x1, master		// Hang for all non-primary CPU
 	b	proc_hang
 
 proc_hang:
@@ -14,19 +14,19 @@ proc_hang:
 
 master:
     bl fromEl2ToEl1
-    adr     x0, _s_bss
-    adr     x1, _e_bss
+    adr     x1, _s_bss
+    adr     x2, _e_bss
     bl memzero
-    ldr x1, =_s_stack
+    ldr x1, =_s_stack    // Load stack ptr
     mov sp, x1
     bl set_exception_vector_table
     bl kernel_main
-    b 	proc_hang
+    b  proc_hang
 
 memzero:
-    str     xzr, [x0]
-    add     x0, x0, #8
-    cmp     x0, x1
+    str     xzr, [x1]
+    add     x1, x1, #8
+    cmp     x1, x2
     bne     memzero
     ret
 
@@ -113,6 +113,6 @@ vector_table:
 
 
 set_exception_vector_table:
-  adr x0, vector_table
-  msr vbar_el1, x0
+  adr x1, vector_table
+  msr vbar_el1, x1
   ret

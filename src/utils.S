@@ -24,14 +24,14 @@ getEl:
 
 .globl fromEl2ToEl1
 fromEl2ToEl1:
-	ldr	x0, =SCTLR_VALUE_MMU_DISABLED
-	msr	sctlr_el1, x0
+	ldr	x1, =SCTLR_VALUE_MMU_DISABLED
+	msr	sctlr_el1, x1
 
-	ldr	x0, =HCR_VALUE
-	msr	hcr_el2, x0
+	ldr	x1, =HCR_VALUE
+	msr	hcr_el2, x1
 
-	ldr	x0, =SPSR_VALUE
-	msr	spsr_el2, x0
+	ldr	x1, =SPSR_VALUE
+	msr	spsr_el2, x1
 
 	msr	elr_el2, lr
 

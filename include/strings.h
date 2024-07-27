@@ -8,7 +8,8 @@
 
 int strcmp(const char* s1, const char* s2);
 
-void strcpy(char* dest, const char* src, int sourceLen);
+//bytes copied into dest
+int strcpy(char* dest, const char* src, int sourceLen);
 
 uint32_t hex2u32_8(const char *buf);
 

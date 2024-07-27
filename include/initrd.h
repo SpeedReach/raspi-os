@@ -4,7 +4,8 @@
 
 #include <stddef.h>
 #include <stdint.h>
-
+#include "endian.h"
+#include "printf.h"
 #include "strings.h"
 #include "utils.h"
 
@@ -33,7 +34,10 @@ typedef struct {
     char 				data[];
 } cpio_newc_entry_t;
 
-#define FILE_SYSTEM_BASE 0x8000000
+
+
+
+void initramfs_callback(const void* data, const uint32_t len);
 
 #define IS_MAGIC_VALUE(VALUE) \
 	value[0] == '0' &&	\
@@ -58,8 +62,11 @@ is_last_entry(const cpio_newc_entry_t * const entry);
 void 
 list_files();
 
+extern char* __initramfs_start;
+
 #define FOR_FILE( ENTRY ,ACTION ) \
-    char* cursor = (char*) FILE_SYSTEM_BASE; \
+    char* cursor = __initramfs_start; \
+    printf("aa: %x\n", cursor);\
     while (1)	\
     {	\
         cpio_newc_entry_t * ENTRY = (cpio_newc_entry_t * ) cursor;	\
