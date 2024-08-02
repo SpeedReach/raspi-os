@@ -1,5 +1,20 @@
 
 #include "strings.h"
+#include <stdint.h>
+#include <stddef.h>
+#include "debug.h"
+
+uint32_t
+strlen(const char *const str)
+{
+    uint32_t len = 0;
+    while (str[len] != '\0')
+    {
+        len++;
+    }
+    return len;
+}
+
 
 uint32_t 
 hex2u32_8(const char *buf){
@@ -66,3 +81,39 @@ void memcpy(void *dest, void *src, size_t n){
     for (int i=0; i<n; i++)  
         cdest[i] = csrc[i];  
 } 
+
+
+char* strtok(char* str, const char* delim){
+    static char* saved = NULL;
+    if(str != NULL){
+        saved = str;
+    }
+    if(saved == NULL){
+        return NULL;
+    }
+    if(saved[0] == '\0'){
+        saved = NULL;
+        return NULL;
+    }
+    char* start = saved;
+    while(*saved != '\0'){
+        const char* d = delim;
+        while(*d != '\0'){
+            if(*saved == *d){
+                *saved = '\0';
+                saved++;
+                return start;
+            }
+            d++;
+        }
+        saved++;
+    }
+    return start;
+}
+
+void memset(void* dest, char c, size_t n){
+    char* d = (char*) dest;
+    for(int i = 0; i < n; i++){
+        d[i] = c;
+    }
+}

@@ -37,7 +37,7 @@ typedef struct {
 
 
 
-void initramfs_callback(const void* data, const uint32_t len);
+void initramfs();
 
 #define IS_MAGIC_VALUE(VALUE) \
 	value[0] == '0' &&	\

@@ -5,18 +5,14 @@
 #include <assert.h>
 #include "buddy.h"
 #include <stddef.h>
+#include <stdbool.h>
+#include "bitops.h"
 
 typedef struct slab_type_t{
     uint8_t index;
     uint8_t slot_amount;
     uint16_t slot_size;
 } __attribute__((packed)) slab_type;
-
-typedef struct slab{
-    slab_type type;
-    void* memory;
-    struct slab* next_free_slab;
-} __attribute__((packed)) slab_t;
 
 
 #define TYPES 5
@@ -29,22 +25,29 @@ static const slab_type SLAB_TYPES[TYPES] = {
     {.index = 4, .slot_amount = 2, .slot_size = 256}
 };
 
+
 #define AVAILABLE_BYTES (512 * 5)
 
-typedef struct page{
-    struct page* next_allocated_page;
-    struct page* last_allocated_page;
-    //make it easier to check if the page is all unallocated.
-    uint8_t remain_slots[TYPES];
-    struct slab* free_lists[TYPES];
-    struct slab slabs[32+16+8+4+2];
+typedef struct page_t {
+    struct page_t* next_allocated_page;
+    struct page_t* prev_allocated_page;
+    //determine the status of each slab, 0 means free, 1 means allocated, 1 bit for each slab.
+    uint8_t slabs_status[NUM_BYTES(32+16+8+4+2)];
+    
     char memory[AVAILABLE_BYTES];
-}  __attribute__((__packed__)) page_t;
+}  __attribute__((__packed__)) page;
 
-static_assert(sizeof(page_t) < FRAME_SIZE);
+
+static_assert(sizeof(page) <= FRAME_SIZE, "Page size exceeds frame size");
 
 void init_dynamic_allocator();
 void* kmalloc(size_t size);
 void kfree(void* ptr);
+
+
+
+
+void test_slab_index_mapping();
+void test_dynamic_allocator();
 
 #endif

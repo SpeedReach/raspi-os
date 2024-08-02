@@ -21,7 +21,6 @@
 
 typedef struct buddy_node_t
 {
-    
     uint8_t free: 1; //0 means allocated, 1 means free
     uint8_t head_order: 4; // 0 ~ MAX_BLOCK_ORDER, is -1 if it belongs to a larger block.
     uint32_t idx: 26;
@@ -32,16 +31,19 @@ typedef struct buddy_node_t
 extern buddy_node* free_buddy_lists[MAX_BLOCK_ORDER + 1];
 extern buddy_node buddy_array[FRAME_COUNT];
 
+
 void init_buddy_system();
 
-void* alloc_buddy(size_t size);
+void* buddy_system_alloc(size_t size);
 
-void free_buddy(void* addr);
+void buddy_system_free(void* addr);
 
-void print_state(int max_nodes);
+
+void print_state(int id_l,int id_r);
+
+
+void memory_reserve(uintptr_t start,uintptr_t end);
 
 void TEST_BUDDY();
-
-
 
 #endif

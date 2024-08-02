@@ -6,6 +6,15 @@
 #include <stdbool.h>
 
 
+#define FDT_BEGIN_NODE 0x00000001
+#define FDT_END_NODE 0x00000002
+#define FDT_PROP 0x00000003
+#define FDT_NOP 0x00000004
+#define FDT_END 0x00000009
+
+#define FDTH_MAGIC 0xd00dfeed
+
+
 typedef struct __attribute__((packed)) fdt_header_t {
  uint32_t magic;
  uint32_t totalsize;
@@ -30,18 +39,25 @@ typedef struct __attribute__((packed)) fdt_property_t{
  uint32_t nameoff;
 } fdt_property;
 
+
+extern const fdt_header* g_fdt_header;
+extern const char* g_blob;
+extern const char* g_dt_str_start;
+
+
 //data, and data size(bytes)
 typedef void (*call_back_func)(const void *, const uint32_t);
 
 
 bool init_dt(const void *const dtb_addr);
-void fdt_traverse(const char * node_name, const char * prop_name, call_back_func call_back);
+
+uint8_t* fdt_next_node(const uint8_t* cur, int *depth);
+char *fdt_get_name(const uint8_t* cur);
+
+uint8_t* eat_no_op(uint8_t* cur);
 
 
-#define FDT_BEGIN_NODE 0x00000001
-#define FDT_END_NODE 0x00000002
-#define FDT_PROP 0x00000003
-#define FDT_NOP 0x00000004
-#define FDT_END 0x00000009
+void* fdt_get_prop(const uint8_t* node_start, const char* prop_name);
+
 
 #endif

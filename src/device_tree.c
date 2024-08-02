@@ -8,73 +8,99 @@
 #include "debug.h"
 
 
-static const char *_dtb_start = NULL;
-static bool success = 0;
+const fdt_header* g_fdt_header = NULL;
+const char* g_blob = NULL; 
+const char* g_dt_str_start = NULL;
 
-bool init_dt(const void *const dtb_addr) {
-    _dtb_start = dtb_addr;
-    success = rev_u32(((const fdt_header*)_dtb_start)->magic) == 0xd00dfeed;
-    
-    return success;
+uint8_t* eat_no_op(uint8_t* cur){
+    while (rev_u32(*(uint32_t*) cur) == FDT_NOP)
+    {
+        cur += sizeof(uint32_t);
+    }
+    return cur;
 }
 
 
+uint8_t* eat_prop(const uint8_t* cur){
+    cur += sizeof(uint32_t);
+    fdt_property* prop = (fdt_property*) cur;
+    cur += sizeof(fdt_property);
+    cur += rev_u32(prop->len);
+    cur = ALIGN_4(cur);
+    return cur;
+}
 
-void fdt_traverse(const char* filter_node_name, const char* filter_prop_name, call_back_func call_back) {
-    const fdt_header* header = (const fdt_header*) _dtb_start;
-    const char* const dt_str_start = _dtb_start + rev_u32(header->off_dt_strings);
-    uint8_t* cur = (uint8_t*) (_dtb_start + rev_u32(header->off_dt_struct));
-    
-    while(1){
-        uint32_t token = rev_u32(*(uint32_t*) cur);
-        if (token != FDT_BEGIN_NODE){
-            break;
-        }
-        cur += sizeof(uint32_t);
-        char node_name[50];
-        int copied = strcpy(node_name, (char*) cur, 100);
-        bool node_matched = strcmp(node_name, filter_node_name) == 0;
-        //printf("node name: %s\n", node_name);
-        cur += copied;
-        cur = ALIGN_4(cur);
-        while(1){
-            token = rev_u32(*(uint32_t*) cur);
-            if(token == FDT_BEGIN_NODE){
-                break;
+//eat the first token and the name of the node
+uint8_t* eat_node_start(const uint8_t* cur){
+    ASSERT_EQ(FDT_BEGIN_NODE, rev_u32(*(uint32_t*) cur), "Should be start of node\n");
+    cur += sizeof(uint32_t);
+    cur += strlen((char*)cur) + 1;
+    cur = ALIGN_4(cur);
+    return cur;
+}
+
+uint8_t* fdt_next_node(const uint8_t* cur, int *depth)
+{
+    cur = eat_node_start(cur);
+    (*depth)++;
+    uint32_t token;
+    while (1)
+    {
+        token = rev_u32(*(uint32_t*) cur);
+        switch (token){
+            case FDT_BEGIN_NODE: {
+                (*depth)++;
+                return cur;
             }
-            switch(token){
-                case FDT_END_NODE: {
-                    cur += sizeof(uint32_t);
-                    break;
+            case FDT_END_NODE: {
+                (*depth)--;
+                cur += sizeof(uint32_t);
+                if(*depth < 0){
+                    return cur;
                 }
-                case FDT_PROP: {
-                    cur += sizeof(uint32_t);
-                    fdt_property* prop = (fdt_property*) cur;
-                    uint32_t len = rev_u32(prop->len);
-                    uint32_t nameoff = rev_u32(prop->nameoff);
-                    cur += sizeof(fdt_property);
-                    //printf("property name: %s\n", dt_str_start + nameoff);
-                    if (node_matched && strcmp((char*) (dt_str_start + nameoff), filter_prop_name) == 0){
-                        call_back(cur, prop->len);
-                    }
-                    cur += len;
-                    cur = ALIGN_4(cur);
-                    break;
-                }
-                case FDT_NOP: {
-                    cur += sizeof(uint32_t);
-                    break;
-                }
-                case FDT_END: {
-                    goto end_traverse;
-                }
-                default: {
-                    PANIC("unknown %d\n", token);
-                }
+                continue;
+            }
+            case FDT_PROP: {
+                cur = eat_prop(cur);
+                continue;
+            }
+            case FDT_NOP: {
+                cur += sizeof(uint32_t);
+                continue;
+            }
+            default: {
+                PANIC("Unknown token: %d\n", token);
             }
         }
     }
-
-end_traverse:
-
+    return cur;
 }
+
+char *fdt_get_name(const uint8_t* cur){
+    return cur + sizeof(uint32_t);
+}
+
+
+void* fdt_get_prop(const uint8_t* node_start, const char* prop_name){
+    uint8_t* cur = eat_node_start(node_start);
+    fdt_property* prop;
+    uint32_t token;
+    while (1)
+    {
+       token = rev_u32(*(uint32_t*) cur);
+       if (token == FDT_END_NODE || token == FDT_END){
+           break;
+       }
+       ASSERT_EQ(FDT_PROP, token, "Should be a property\n");
+       cur += sizeof(uint32_t);
+       prop = (fdt_property*) cur;
+       cur += sizeof(fdt_property);
+       if(strcmp(prop_name, g_dt_str_start + rev_u32(prop->nameoff)) == 0){
+           return cur;
+       }
+       cur += rev_u32(prop->len);
+       cur = ALIGN_4(cur);
+    }
+    return NULL;
+}
+

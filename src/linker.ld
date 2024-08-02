@@ -1,13 +1,10 @@
 /*
 
-
-
-
 */
 
 
-KernekStackSize = 200000;
-
+KernelStackSize = 100000;
+KernelHeapSize = 100000;
 SECTIONS
 {
   . = 0x80000;
@@ -40,7 +37,10 @@ SECTIONS
   
   _e_kernel = .;
 
-  . = . + KernekStackSize;
+  . = . + KernelStackSize;
   _s_stack = .;
 
+  _e_heap = .;
+  . = . + KernelHeapSize;
+  _s_heap = .;
 }
