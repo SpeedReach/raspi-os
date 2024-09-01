@@ -38,7 +38,7 @@ typedef struct page_t {
 }  __attribute__((__packed__)) page;
 
 
-static_assert(sizeof(page) <= FRAME_SIZE, "Page size exceeds frame size");
+static_assert(sizeof(struct page_t) <= FRAME_SIZE, "Page size exceeds frame size");
 
 void init_dynamic_allocator();
 void* kmalloc(size_t size);

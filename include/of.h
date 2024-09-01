@@ -43,8 +43,12 @@ int of_scan_flat_dt(int (*it)(const uint8_t* node,
 			   void *data);
 
 
-void* of_get_flat_dt_prop(const uint8_t* node_start, const char* prop_name);
-
+void* of_get_flat_dt_prop(const uint8_t* node_start, const char* prop_name, int* len);
+#define for_each_dt_child_of_node(depth, node, child_start) \
+	int tmp_depth = depth; \
+	for(child_start = fdt_next_node(node, &tmp_depth); \
+		tmp_depth == depth + 1; \
+		child_start = fdt_next_node(child_start, &tmp_depth))
 
 /**
  * @brief parse the flat device tree and build the tree structure
@@ -66,10 +70,6 @@ property* of_find_property(device_node* node, char* name);
 #define for_each_property_of_node(node, prop) \
 	for(prop = node->properties; prop != NULL; prop = prop->next)
 
-
-int early_init_dt_scan_memory(const uint8_t* node,
-				     const char *name, int depth,
-				     void *data);
 
 #endif
 

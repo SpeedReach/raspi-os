@@ -1,6 +1,6 @@
 #include "of.h"
 #include "stddef.h"
-#include "mm/simple_malloc.h"
+#include "mm/dynamic_allocator.h"
 #include "debug.h"
 #include "endian.h"
 #include "align.h"
@@ -23,7 +23,8 @@ void of_init(const void *dtb_start){
 
 void of_parse_fdt(){
     uint8_t* cur = (uint8_t*) (g_blob + rev_u32(g_fdt_header->off_dt_struct));
-    root = (device_node*) simple_malloc(sizeof(device_node));
+    root = (device_node*) kmalloc(sizeof(device_node));
+    d_printfln("root: %x", root);
     parse_scope(root, cur);
 }
 
@@ -80,7 +81,7 @@ uint8_t* parse_node(device_node* node, uint8_t* cur){
         uint32_t token = rev_u32(*(uint32_t*) cur);
         switch (token){
             case FDT_BEGIN_NODE: {
-                device_node* child = (device_node*) simple_malloc(sizeof(device_node));
+                device_node* child = (device_node*) kmalloc(sizeof(device_node));
                 ASSERT(node->child == NULL, "%s already have a child %s", node->name, node->child->name);
                 node->child = child;
                 cur = parse_scope(child, cur);
@@ -91,7 +92,7 @@ uint8_t* parse_node(device_node* node, uint8_t* cur){
                 goto end_parse_node;
             }
             case FDT_PROP: {
-                property* prop = (property*) simple_malloc(sizeof(property));
+                property* prop = (property*) kmalloc(sizeof(property));
                 add_property(node, prop);
                 cur = parse_property(prop, cur);
                 continue;
@@ -119,7 +120,7 @@ uint8_t* parse_scope(device_node* scope_head,uint8_t* cur){
         if(token == FDT_END_NODE || token == FDT_END){
             break;
         }
-        device_node* sib = simple_malloc(sizeof(device_node));
+        device_node* sib = kmalloc(sizeof(device_node));
         cur = parse_node(sib, cur);
         //printf("sibling: %s\n", sib->name);
         tail->sibling = sib;
@@ -179,8 +180,8 @@ int of_scan_flat_dt(int (*it)(const uint8_t* node,
 	return rc;
 }
 
-void* of_get_flat_dt_prop(const uint8_t* node, const char* prop_name){
-    return fdt_get_prop(node, prop_name);
+void* of_get_flat_dt_prop(const uint8_t* node, const char* prop_name, int* len){
+    return fdt_get_prop(node, prop_name, len);
 }
 
 

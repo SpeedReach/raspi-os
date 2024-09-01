@@ -22,11 +22,14 @@ page* internal_alloc(){
     if (allocated_pages_head == NULL){
         allocated_pages_head = p;
         allocated_pages_tail = p;
+        p->prev_allocated_page = NULL;
+        p->next_allocated_page = NULL;
     }
     else{
         allocated_pages_tail->next_allocated_page = p;
         p->prev_allocated_page = allocated_pages_tail;
         allocated_pages_tail = p;
+        p->next_allocated_page = NULL;
     }
     
     //set all slabs to free
@@ -58,7 +61,7 @@ void print_page_status(page* p){
 }
 
 void init_dynamic_allocator(){
-    init_buddy_system();
+    init_buddy_system(0, get_total_memory_size());
 }
 
 // get start offset in memory for a slab type
@@ -119,14 +122,15 @@ slab_type round_up(size_t size){
 }
 
 void* kmalloc(size_t size){
+    //d_printfln("Allocating memory of size %u", size);
     if(size > SLAB_TYPES[TYPES -1].slot_size){
         //allocated a memory larger than a page
         return buddy_system_alloc(size);
     }
     
     bool has_free = false;
-    page* p;
-    if(allocated_pages_head == NULL){
+    page* p = allocated_pages_head;
+    if(p == NULL){
         p = internal_alloc();
         has_free = true;
     }
@@ -142,13 +146,18 @@ void* kmalloc(size_t size){
         for(int i=0;i<SLAB_TYPES[type.index].slot_amount;i++){
             if(CHECK_BIT(p->slabs_status, s_status_index) == 0){
                 has_free = true;
+                //d_printfln("slab %d is free in %x!!!", s_status_index, p);
                 break;
             }
             s_status_index ++;
         }
+        if(!has_free){
+            p = p->next_allocated_page;
+        }
     }
 
     if(!has_free){
+        d_printfln("No available slab with type %d allocating a new page", type.index);
         p = internal_alloc();
         if(p == NULL){
             d_printfln("cannot allocate memory for target size %u", size);
@@ -158,7 +167,7 @@ void* kmalloc(size_t size){
     }
 
     //set the slab to allocated]
-    d_printfln("s_status_index: %d", s_status_index);
+    //d_printfln("s_status_index: %d", s_status_index);
     SET_BIT(p->slabs_status, s_status_index);
     ASSERT(CHECK_BIT(p->slabs_status, s_status_index), "set bit failed");
     return slab_mem_offset(s_status_index) + p->memory;
@@ -221,6 +230,7 @@ void test_slab_index_mapping(){
     d_printfln("Slab index mapping test passed.");
 }
 
+
 void test_dynamic_allocator() {
     printf("Testing dynamic memory allocator.\n");
     // Allocate memory of different sizes
@@ -261,7 +271,7 @@ void test_dynamic_allocator() {
     kfree(ptr5);
 
     ASSERT(should_free((page*) ((uint8_t*)ptr1 - offsetof(page, memory))), "Should be able to free the page.\n");
-
-    // Check if the deallocations were successful
-    printf("Deallocated all allocated memory.\n");
+    d_printfln("Deallocated all allocated memory.\n");
+    ASSERT(allocated_pages_head == NULL && allocated_pages_tail == NULL, "All pages should be deallocated.\n");
+    printf("Dynamic memory allocator test passed.\n");
 }

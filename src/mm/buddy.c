@@ -1,9 +1,13 @@
 #include "mm/buddy.h"
+#include "mm/memblock.h"
 #include "printf.h"
 #include "debug.h"
+#include "types.h"
 
 buddy_node* free_buddy_lists[MAX_BLOCK_ORDER + 1] = {NULL};
-buddy_node buddy_array[FRAME_COUNT] = {0};
+buddy_node* buddy_array;
+phys_addr_t buddy_base;
+phys_addr_t buddy_total_size;
 
 #define N_FRAMES_PER_BLOCK(ORDER) (1 << ORDER)
 #define IS_HEAD(NODE) (NODE->head_order >= 0)
@@ -34,79 +38,106 @@ release_redundant(buddy_node* node, size_t target_size, enum lr release_directio
 void
 attempt_merge_free_node(buddy_node* node);
 
+void init_free_head(buddy_node* node, int order){
+    //first find the order of the block
+    node->head_order = order;
+    node->free = 1;
+    node->next_free = NULL;
+    node->last_free = NULL;
+    for (int i = 1; i < N_FRAMES_PER_BLOCK(order); i++)
+    {
+        buddy_node* tmp = node + i;
+        tmp->head_order = NONE_HEAD_ORDER;
+        tmp->free = 1;
+    }
+    insert_free_list(node);
+}
 
+int find_ideal_max_order(int buddy_idx ,phys_addr_t size){
+    int ideal_order = MAX_BLOCK_ORDER;
+    while (1)
+    {
+        if(buddy_idx % N_FRAMES_PER_BLOCK(ideal_order) == 0){
+            break;
+        }
+        ideal_order --;
+    }
+    return ideal_order;
+}
 
+int find_optimal_order(phys_addr_t max_size, int max_order){
+    int order = max_order;
+    while (order >= 0)
+    {
+        if(N_FRAMES_PER_BLOCK(order) * FRAME_SIZE >= max_size){
+            order --;
+            continue;
+        }
+        break;
+    }
+    return order;
+}
 
+void init_free_zone(phys_addr_t base, size_t size){
+    d_printfln("init free zone %x %x", base, size);
+    phys_addr_t zone_end = base + size; //exclusive
+    int buddy_idx = map_to_buddy_index(base);
+    int end_idx = map_to_buddy_index(zone_end);
+    d_printfln("start idx: %d, end idx: %d", buddy_idx, end_idx);
+    while (1)
+    {
+        int order = find_ideal_max_order(buddy_idx, size);
+        //d_printfln("ideal order for %d size %x is %d", buddy_idx, size, order);
+        order = find_optimal_order(size, order);
+        //d_printfln("optimal is %d", order);
+        if(order < 0){
+            break;
+        }
+        init_free_head(&buddy_array[buddy_idx], order);
+        buddy_idx += N_FRAMES_PER_BLOCK(order);
+        size -= N_FRAMES_PER_BLOCK(order) * FRAME_SIZE;
+    }
+}
 
 /**
  * @brief initializes the free_buddy_lists[MAX_BLOCK_ORDER] with a max order linked list, and sets the buddy_array with correct idx.
  */
-void init_buddy_system(){
-    // setup the buddy array
-    for(int i=0;i<FRAME_COUNT;i++){
+void init_buddy_system(phys_addr_t base, phys_addr_t size){
+    d_printfln("init buddy system\n");
+    buddy_base = base;
+    buddy_total_size = size;
+    int buddy_count = size/FRAME_SIZE;
+    buddy_array = (buddy_node*) memblock_alloc(buddy_count * sizeof(buddy_node), FRAME_SIZE);
+    d_printfln("buddy_count: %x", buddy_count);
+    d_printfln("buddy_array: %x", buddy_array);
+    d_printfln("buddy_base: %x", buddy_base);
+    d_printfln("buddy_total_size: %x", buddy_total_size);
+
+    for(int i=0;i<buddy_count;i++){
         buddy_array[i].idx = i;
+        buddy_array[i].free = 0;
+        buddy_array[i].head_order = 0;
         buddy_array[i].next_free = NULL;
         buddy_array[i].last_free = NULL;
-        buddy_array[i].free = 1;
-        // the node value should be MAX_BLOCK_ORDER if it's the start of a max order block
-        // else just FREE_FRAME_VALUE
-        if((i % (1 << MAX_BLOCK_ORDER)) == 0){
-            buddy_array[i].head_order = MAX_BLOCK_ORDER;
-        }
-        else{
-            buddy_array[i].head_order = NONE_HEAD_ORDER;
-        }
     }
-    
-    // setup the free buddy list
-    for(int i=0;i<MAX_BLOCK_ORDER;i++){
-        free_buddy_lists[i] = NULL;
-    }
-    // set the MAX_BLOCK_ORDER free_list's head to the first element in the buddy array,
-    // which should also be the first block.
-    free_buddy_lists[MAX_BLOCK_ORDER] = &buddy_array[0];
-    
-    //link the max order free_buddy_list
-    for(int i=0 ; i < (TOTAL_BUDDY_SIZE/MAX_BLOCK_SIZE) - 1; i++ ){
-        buddy_array[i * (MAX_BLOCK_SIZE/FRAME_SIZE)].next_free = &buddy_array[(i+1) * (MAX_BLOCK_SIZE/FRAME_SIZE)];
-        buddy_array[(i+1) * (MAX_BLOCK_SIZE/FRAME_SIZE)].last_free = &buddy_array[i * (MAX_BLOCK_SIZE/FRAME_SIZE)];
-    }
-    //the last element's next_free should point to NULL
-    //set the last element of the free_buddy_list's next_free to NULL
-    buddy_array[FRAME_COUNT - (MAX_BLOCK_SIZE/FRAME_SIZE) ].next_free = NULL;
 
+    d_printfln("buddy_array initialized");
+
+    phys_addr_t zone_size;
+    base = find_next_free_zone(base, &zone_size);
+    for(; base != INVALID_PA; base = find_next_free_zone(base, &zone_size)){
+        //d_printfln("zone_base: %x", base);
+        //d_printfln("zone_size: %x", zone_size);
+        if(zone_size < FRAME_SIZE){
+            //d_printfln("zone size is smaller than frame size, skip");
+            continue;
+        }
+        init_free_zone(base, zone_size);
+    }
 }
 
-//find the free list node that contains the bud_idx node.
-buddy_node* find_free_head(int bud_idx){
-    for(int i = MAX_BLOCK_ORDER;i>=0;i--){
-        buddy_node* node = free_buddy_lists[i];
-        int nframes_per_block = N_FRAMES_PER_BLOCK(i);
-        for(;node != NULL;node = node->next_free){
-            if(node->idx <= bud_idx && node->idx + nframes_per_block > bud_idx){
-                return node;
-            }
-        }
-    }
-    return NULL;
-}
 
-void memory_reserve(uintptr_t start,uintptr_t end){
-    int start_bud_idx = map_to_buddy_index(start);
-    int end_bud_idx = map_to_buddy_index(end);
 
-    //find head that contains the memory range
-    while (1)
-    {
-        buddy_node* node = find_free_head(start_bud_idx);
-        set_block_allocated(node);
-        int nframes = N_FRAMES_PER_BLOCK(node->head_order);
-        start_bud_idx += nframes;
-        if(start_bud_idx > nframes){
-            
-        }
-    }
-}
 
 void* buddy_system_alloc(size_t size){
     buddy_node* node = alloc_free_block(size);
@@ -152,6 +183,8 @@ void extract_from_free(buddy_node* node){
     node->next_free = NULL;
 }
 
+
+//Big problem here, the buddy_node is not correctly merged. 
 void attempt_merge_free_node(buddy_node* node){
     d_printfln("attempt merging %d", node->idx);
     if(node->head_order == MAX_BLOCK_ORDER){
@@ -195,7 +228,7 @@ void attempt_merge_free_node(buddy_node* node){
 
 //align the size to the nearest 2^n * FRAME_SIZE, returns n
 int align_size(size_t size){
-    ASSERT(size < BUDDY_END - BUDDY_START, "size should be smaller than the total buddy size");
+    ASSERT(size < buddy_total_size, "size should be smaller than the total buddy size");
     size_t tmp = FRAME_SIZE;
     int i = 0;
     while(tmp < size){
@@ -209,7 +242,7 @@ int align_size(size_t size){
 //calculate physial address
 uintptr_t map_phy_addr(buddy_node* node){
     ASSERT(node->head_order >= 0, "should not access phy address with a not head buddy_node!")
-    return (BUDDY_START + FRAME_SIZE * (long)(node->idx));
+    return (buddy_base + FRAME_SIZE * (long)(node->idx));
 }
 
 
@@ -308,8 +341,8 @@ buddy_node* alloc_free_block(size_t size) {
             depth ++;
             continue;
         }
-        d_printfln("found free block in depth %d", depth);
         buddy_node* free_block = free_buddy_lists[depth];
+        d_printfln("found free block in depth %d %d", depth, free_block->idx);
         ASSERT(free_block->head_order == depth, "");
         set_block_allocated(free_block);
         return free_block;
@@ -320,9 +353,9 @@ buddy_node* alloc_free_block(size_t size) {
 
 
 int map_to_buddy_index(uintptr_t addr){
-    ASSERT(addr >= BUDDY_START, "invalid mem range.");
-    ASSERT(addr < BUDDY_END, "invalid mem range");
-    return (addr - BUDDY_START) / FRAME_SIZE;
+    ASSERT(addr >= buddy_base, "invalid mem range %x.", addr);
+    ASSERT(addr <= buddy_base + buddy_total_size, "invalid mem range %x", addr);
+    return (addr - buddy_base) / FRAME_SIZE;
 }
 
 buddy_node* map_to_buddy(void* addr){
@@ -367,30 +400,40 @@ void print_state(int id_l,int id_r){
 
 
 void TEST_BUDDY(){
+    printf("initial state\n");
+    print_state(0, 128);
+    printf("allocating a1 int\n");
     int* a1 = buddy_system_alloc(sizeof(int));
     ASSERT(a1, "a1 should be valid");
     *a1 = 10;
-    print_state(0, 64);
+    print_state(0, 128);
 
+    printf("allocating a2 int\n");
     int *a2 = buddy_system_alloc(sizeof(int));
-    print_state(0, 64);
+    print_state(0, 128);
     *a2 = 20;
+    printf("freeing a1 (int)\n");
     buddy_system_free(a1);
 
-    print_state(0, 64);
+    print_state(0, 128);
+    printf("allocating a3 int\n");
     int* a3 = buddy_system_alloc(sizeof(int));
     *a3 = 14;
     printf("%d", *a3);
 
-    print_state(0, 64);
+    print_state(0, 128);
+    printf("allocating a5 3 FRAME\n");
     void* a5 = buddy_system_alloc(FRAME_SIZE *2 +1);
-    print_state(0, 64);
+    print_state(0, 128);
     buddy_system_free(a2);
-    print_state(0, 64);
+    printf("freeing a2 (int)\n");
+    print_state(0, 128);
     buddy_system_free(a3);
-    print_state(0, 64);
+    printf("freeing a3 (int)\n");
+    print_state(0, 128);
     buddy_system_free(a5);
-    print_state(0, 64);
+    printf("freeing a5 (3 FRAME)\n");
+    print_state(0, 128);
 }
 
 

@@ -21,15 +21,15 @@ void kernel_main(const void *const dtb_addr){
     of_init(dtb_addr);
     memblock_init();
     
-    of_parse_fdt();
-    initramfs();
-    
-    
     init_dynamic_allocator();
-    list_files();
     TEST_BUDDY();
     test_slab_index_mapping();
     test_dynamic_allocator();
+    test_dynamic_allocator();
+    of_parse_fdt();
+    initramfs();
+    list_files();
+   
 
     device_node* node = of_find_node_by_path("reserved-memory");
     ASSERT(node != NULL, "node is null");

@@ -1,12 +1,11 @@
-
-#include<device_tree.h>
-#include<printf.h>
-#include<endian.h>
 #include<stddef.h>
 #include "strings.h"
 #include "align.h"
 #include "debug.h"
-
+#include "utils.h"
+#include "device_tree.h"
+#include "printf.h"
+#include "endian.h"
 
 const fdt_header* g_fdt_header = NULL;
 const char* g_blob = NULL; 
@@ -42,7 +41,6 @@ uint8_t* eat_node_start(const uint8_t* cur){
 uint8_t* fdt_next_node(const uint8_t* cur, int *depth)
 {
     cur = eat_node_start(cur);
-    (*depth)++;
     uint32_t token;
     while (1)
     {
@@ -81,22 +79,23 @@ char *fdt_get_name(const uint8_t* cur){
 }
 
 
-void* fdt_get_prop(const uint8_t* node_start, const char* prop_name){
+void* fdt_get_prop(const uint8_t* node_start, const char* prop_name, int* len){
     uint8_t* cur = eat_node_start(node_start);
     fdt_property* prop;
     uint32_t token;
     while (1)
     {
        token = rev_u32(*(uint32_t*) cur);
-       if (token == FDT_END_NODE || token == FDT_END){
-           break;
+       if (token == FDT_END_NODE || token == FDT_END || token == FDT_BEGIN_NODE){
+            break;
        }
        ASSERT_EQ(FDT_PROP, token, "Should be a property\n");
        cur += sizeof(uint32_t);
        prop = (fdt_property*) cur;
        cur += sizeof(fdt_property);
        if(strcmp(prop_name, g_dt_str_start + rev_u32(prop->nameoff)) == 0){
-           return cur;
+            *len = rev_u32(prop->len);
+            return cur;
        }
        cur += rev_u32(prop->len);
        cur = ALIGN_4(cur);

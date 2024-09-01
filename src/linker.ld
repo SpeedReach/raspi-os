@@ -1,17 +1,12 @@
-/*
-
-*/
-
-
-KernelStackSize = 100000;
-KernelHeapSize = 100000;
+KernelStackSize = 50000;
+KernelHeapSize = 150000;
 SECTIONS
 {
   . = 0x80000;
-  .text.boot : { *(.text.boot) }
-
+  
   .text : {
     _s_text = .;
+    *(.text.boot)
     *(.text)
     _e_text = .;
   }

@@ -57,7 +57,7 @@ char *fdt_get_name(const uint8_t* cur);
 uint8_t* eat_no_op(uint8_t* cur);
 
 
-void* fdt_get_prop(const uint8_t* node_start, const char* prop_name);
+void* fdt_get_prop(const uint8_t* node_start, const char* prop_name, int* len);
 
 
 #endif

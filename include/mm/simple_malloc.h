@@ -6,7 +6,8 @@
 
 extern char _s_stack[];
 
-void* simple_malloc(size_t size);
+//use kmalloc instead
+//void* simple_malloc(size_t size);
 
 
 #endif

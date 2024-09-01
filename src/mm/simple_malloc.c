@@ -4,6 +4,7 @@
 char _s_heap[];
 
 void* simple_malloc(size_t size) {
+    d_printfln("heap head: %x", _s_heap);
     static char* kernel_heap_head = NULL;
 
     if (!kernel_heap_head) {

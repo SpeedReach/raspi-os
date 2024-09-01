@@ -5,7 +5,7 @@
 #include "printf.h"
 
 
-#define DEBUG
+
 
 
 
@@ -16,6 +16,8 @@
     printf(__VA_ARGS__);    \
     printf("\n");    \
     while(1);
+
+#define UNREACHABLE() PANIC("unreachable code reached")
 
 
 #ifdef DEBUG
@@ -44,6 +46,7 @@
     } 
 
 #define d_printf(...) 
+#define d_printfln(...)
 #define ASSERT_EQ(EXPECT, ACTUAL, ...) 
 #endif
 

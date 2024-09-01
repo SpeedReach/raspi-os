@@ -5,14 +5,11 @@
 #include <stdint.h>
 
 #include "debug.h"
+#include "types.h"
 
 #define NONE_HEAD_ORDER 15
 
-#define BUDDY_START 0x10000000
-#define BUDDY_END 0x18000000
-#define TOTAL_BUDDY_SIZE (BUDDY_END - BUDDY_START)
 #define FRAME_SIZE 0x1000
-#define FRAME_COUNT TOTAL_BUDDY_SIZE / FRAME_SIZE
 
 #define MAX_BLOCK_SIZE 0x100000 //max block size contains 256 frames
 // the max order should be log(MAX_BLOCK_SIZE/FRAME_SIZE) which means there are MAX_BLOCK_ORDER+1 free buddy lists
@@ -29,10 +26,12 @@ typedef struct buddy_node_t
 }buddy_node;
 
 extern buddy_node* free_buddy_lists[MAX_BLOCK_ORDER + 1];
-extern buddy_node buddy_array[FRAME_COUNT];
+extern buddy_node* buddy_array;
+extern phys_addr_t buddy_base;
+extern phys_addr_t buddy_total_size;
 
 
-void init_buddy_system();
+void buddy_init(phys_addr_t base, phys_addr_t size);
 
 void* buddy_system_alloc(size_t size);
 
