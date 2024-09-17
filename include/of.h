@@ -43,7 +43,7 @@ int of_scan_flat_dt(int (*it)(const uint8_t* node,
 			   void *data);
 
 
-void* of_get_flat_dt_prop(const uint8_t* node_start, const char* prop_name, int* len);
+const void* of_get_flat_dt_prop(const uint8_t* node_start, const char* prop_name, int* len);
 #define for_each_dt_child_of_node(depth, node, child_start) \
 	int tmp_depth = depth; \
 	for(child_start = fdt_next_node(node, &tmp_depth); \

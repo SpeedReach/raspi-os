@@ -51,13 +51,13 @@ typedef void (*call_back_func)(const void *, const uint32_t);
 
 bool init_dt(const void *const dtb_addr);
 
-uint8_t* fdt_next_node(const uint8_t* cur, int *depth);
-char *fdt_get_name(const uint8_t* cur);
+const uint8_t* fdt_next_node(const uint8_t* cur, int *depth);
+const char *fdt_get_name(const uint8_t* cur);
 
-uint8_t* eat_no_op(uint8_t* cur);
+const uint8_t* eat_no_op(const uint8_t* cur);
 
 
-void* fdt_get_prop(const uint8_t* node_start, const char* prop_name, int* len);
+const void* fdt_get_prop(const uint8_t* node_start, const char* prop_name, int* len);
 
 
 #endif

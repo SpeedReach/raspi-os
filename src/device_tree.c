@@ -11,7 +11,7 @@ const fdt_header* g_fdt_header = NULL;
 const char* g_blob = NULL; 
 const char* g_dt_str_start = NULL;
 
-uint8_t* eat_no_op(uint8_t* cur){
+const uint8_t* eat_no_op(const uint8_t* cur){
     while (rev_u32(*(uint32_t*) cur) == FDT_NOP)
     {
         cur += sizeof(uint32_t);
@@ -20,7 +20,7 @@ uint8_t* eat_no_op(uint8_t* cur){
 }
 
 
-uint8_t* eat_prop(const uint8_t* cur){
+const uint8_t* eat_prop(const uint8_t* cur){
     cur += sizeof(uint32_t);
     fdt_property* prop = (fdt_property*) cur;
     cur += sizeof(fdt_property);
@@ -30,7 +30,7 @@ uint8_t* eat_prop(const uint8_t* cur){
 }
 
 //eat the first token and the name of the node
-uint8_t* eat_node_start(const uint8_t* cur){
+const uint8_t* eat_node_start(const uint8_t* cur){
     ASSERT_EQ(FDT_BEGIN_NODE, rev_u32(*(uint32_t*) cur), "Should be start of node\n");
     cur += sizeof(uint32_t);
     cur += strlen((char*)cur) + 1;
@@ -38,7 +38,7 @@ uint8_t* eat_node_start(const uint8_t* cur){
     return cur;
 }
 
-uint8_t* fdt_next_node(const uint8_t* cur, int *depth)
+const uint8_t* fdt_next_node(const uint8_t* cur, int *depth)
 {
     cur = eat_node_start(cur);
     uint32_t token;
@@ -74,24 +74,22 @@ uint8_t* fdt_next_node(const uint8_t* cur, int *depth)
     return cur;
 }
 
-char *fdt_get_name(const uint8_t* cur){
-    return cur + sizeof(uint32_t);
+const char *fdt_get_name(const uint8_t* cur){
+    return (const char *) cur + sizeof(uint32_t);
 }
 
 
-void* fdt_get_prop(const uint8_t* node_start, const char* prop_name, int* len){
-    uint8_t* cur = eat_node_start(node_start);
-    fdt_property* prop;
-    uint32_t token;
+const void* fdt_get_prop(const uint8_t* node_start, const char* prop_name, int* len){
+    const uint8_t* cur = eat_node_start(node_start);
     while (1)
     {
-       token = rev_u32(*(uint32_t*) cur);
+        const uint32_t token = rev_u32(*(uint32_t *) cur);
        if (token == FDT_END_NODE || token == FDT_END || token == FDT_BEGIN_NODE){
             break;
        }
        ASSERT_EQ(FDT_PROP, token, "Should be a property\n");
        cur += sizeof(uint32_t);
-       prop = (fdt_property*) cur;
+        const fdt_property *prop = (fdt_property *) cur;
        cur += sizeof(fdt_property);
        if(strcmp(prop_name, g_dt_str_start + rev_u32(prop->nameoff)) == 0){
             *len = rev_u32(prop->len);

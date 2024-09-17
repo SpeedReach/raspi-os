@@ -29,9 +29,9 @@ void kernel_main(const void *const dtb_addr){
     of_parse_fdt();
     initramfs();
     list_files();
-   
 
-    device_node* node = of_find_node_by_path("reserved-memory");
+
+    const device_node* node = of_find_node_by_path("reserved-memory");
     ASSERT(node != NULL, "node is null");
     printf("node: %s\n", node->name);
     property* prop;

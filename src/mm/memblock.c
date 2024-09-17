@@ -33,11 +33,11 @@ int early_init_dt_scan_memory(const uint8_t* node,
         return 0;
     }
     int len;
-    uint32_t* reg = of_get_flat_dt_prop(node, "reg", &len);
+    const uint32_t* reg = of_get_flat_dt_prop(node, "reg", &len);
     ASSERT(reg != NULL, "reg is null");
     for (int i = 0; i < len/sizeof(uint32_t); i+=2){
-        phys_addr_t base = rev_u32(reg[i]);
-        phys_addr_t size = rev_u32(reg[i+1]);
+        const phys_addr_t base = rev_u32(reg[i]);
+        const phys_addr_t size = rev_u32(reg[i+1]);
         d_printfln("adding memory@0 base: %x, size: %x", base, size);
         memblock_add(base, size);
     }
@@ -50,16 +50,16 @@ int early_init_dt_scan_reserved(const uint8_t* node,
     if(strcmp(name ,"reserved-memory") != 0){
         return 0;
     }
-    uint8_t* child_start;
+    const uint8_t* child_start;
     for_each_dt_child_of_node(depth, node, child_start){
         int len;
-        uint32_t* reg = of_get_flat_dt_prop(child_start, "reg", &len);
+        const uint32_t* reg = of_get_flat_dt_prop(child_start, "reg", &len);
         if(reg == NULL){
             continue;
         }
         for (int i = 0; i < len/sizeof(uint32_t); i+=2){
-            phys_addr_t base = reg[i];
-            phys_addr_t size = reg[i+1];
+            const phys_addr_t base = reg[i];
+            const phys_addr_t size = reg[i+1];
             d_printfln("reserved-memory base: %x, size: %x for %s", base, size, fdt_get_name(child_start));
             memblock_reserve(base, size);
         }
@@ -73,13 +73,12 @@ int early_init_dt_scan_initramfs(const uint8_t* node,
     if(strcmp(name ,"chosen") != 0){
         return 0;
     }
-    int len;
-    uint32_t* start = of_get_flat_dt_prop(node, "linux,initrd-start", NULL);
+    const uint32_t* start = of_get_flat_dt_prop(node, "linux,initrd-start", NULL);
     ASSERT(start != NULL, "start is null");
-    uint32_t* end = of_get_flat_dt_prop(node, "linux,initrd-end", NULL);
+    const uint32_t* end = of_get_flat_dt_prop(node, "linux,initrd-end", NULL);
     ASSERT(end != NULL, "end is null");
-    uint32_t start_val = rev_u32(*start);
-    uint32_t end_val = rev_u32(*end);
+    const uint32_t start_val = rev_u32(*start);
+    const uint32_t end_val = rev_u32(*end);
     phys_addr_t base = start_val;
     phys_addr_t size = end_val - start_val;
     d_printfln("Reserving initrd base: %x, size: %x", base, size);
@@ -298,6 +297,7 @@ void* memblock_alloc(phys_addr_t size, phys_addr_t align){
         memblock_reserve(base, size);
         return (void*) base;
     }
+    return NULL;
 }
 
 phys_addr_t get_total_memory_size(){

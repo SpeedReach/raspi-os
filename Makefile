@@ -1,4 +1,4 @@
-ARMGNU ?= aarch64-none-linux-gnu
+ARMGNU ?= aarch64-linux-gnu
 
 CFLAGS = -Wall -nostdlib -nostartfiles -ffreestanding -Iinclude -mgeneral-regs-only -MP -MD -g
 
@@ -13,6 +13,9 @@ all: kernel8.img
 
 qemu: kernel8.img
 	qemu-system-aarch64 -M raspi3b -kernel kernel8.img -serial null -serial stdio -initrd initramfs.cpio -dtb bcm2710-rpi-3-b-plus.dtb
+
+
+
 
 clean: 
 	rm -rf $(BUILD_DIR) *.img
