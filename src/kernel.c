@@ -8,18 +8,28 @@
 #include "device_tree.h"
 #include "endian.h"
 #include "of.h"
+#include "timer.h"
+#include "user/user_program.h"
+#include "exceptions.h"
 
-
-
+void test_user() {
+    printf("Hello World!\n");
+    while(1) {
+        asm volatile("svc 0");
+        //printf("hiii\n");
+    }
+}
 void kernel_main(const void *const dtb_addr){
     uart_init();
     init_printf(0,uart_putc);
+
 
     run_tests();
 
     printf("dtb_addr at: %x\n", dtb_addr);
     of_init(dtb_addr);
     memblock_init();
+
     
     init_dynamic_allocator();
     TEST_BUDDY();
@@ -29,6 +39,7 @@ void kernel_main(const void *const dtb_addr){
     of_parse_fdt();
     initramfs();
     list_files();
+
 
 
     const device_node* node = of_find_node_by_path("reserved-memory");
@@ -53,11 +64,16 @@ void kernel_main(const void *const dtb_addr){
 
     //TEST_BUDDY();
     
+
+    asm volatile ("msr DAIFClr, %0" : : "i" (0xF));
+    core_timer_el0_enable();
+    core_timer_el0_init();
+    //core_timer_el0_enable();
     printf("current el: %d\n", getEl());
+
     while (1)
     {
         /* code */
-        
     }
     
 }

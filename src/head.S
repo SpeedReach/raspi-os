@@ -77,26 +77,20 @@ memzero:
 .macro interrupt_handler handler_func
 .align 7
 save_all
-mrs x0, spsr_el1
-mrs x1, elr_el1
-mrs x2, esr_el1
 bl   \handler_func
 load_all
 eret
 .endm
 
-.macro kernel_ventry handler_func
-.align 7
-.endm
-
 
 .align 11 // vector table should be aligned to 0x800
 vector_table:
-  interrupt_handler default_exception_handler 
   interrupt_handler default_exception_handler
   interrupt_handler default_exception_handler
+  interrupt_handler irq_router
   interrupt_handler default_exception_handler
 
+  interrupt_handler default_exception_handler
   interrupt_handler default_exception_handler
   interrupt_handler default_exception_handler
   interrupt_handler default_exception_handler

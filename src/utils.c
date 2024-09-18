@@ -3,12 +3,11 @@
 
 // Swap function to swap two elements
 void swap(void* a, void* b, size_t size) {
-    char temp;
-    char* p1 = (char*)a;
-    char* p2 = (char*)b;
+    char* p1 = a;
+    char* p2 = b;
     
     for (size_t i = 0; i < size; i++) {
-        temp = p1[i];
+        const char temp = p1[i];
         p1[i] = p2[i];
         p2[i] = temp;
     }
@@ -31,7 +30,7 @@ int partition(void* base, int low, int high, size_t size, int (*cmp)(const void*
 }
 
 // Quicksort function
-void quickSort(void* base, int low, int high, size_t size, int (*cmp)(const void*, const void*)) {
+void quickSort(void* base, const int low, const int high, const size_t size, int (*cmp)(const void*, const void*)) {
     if (low < high) {
         int pi = partition(base, low, high, size, cmp);
         quickSort(base, low, pi - 1, size, cmp);

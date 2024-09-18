@@ -5,7 +5,8 @@ CFLAGS = -Wall -nostdlib -nostartfiles -ffreestanding -Iinclude -mgeneral-regs-o
 
 SRC_DIR = src
 BUILD_DIR = build
-SUB_SRC_DIRS = . mm
+SUB_SRC_DIRS = . mm user
+
 
 
 

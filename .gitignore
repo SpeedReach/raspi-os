@@ -2,3 +2,4 @@
 **.img
 initramfs.cpio
 .vscode/
+/.idea
